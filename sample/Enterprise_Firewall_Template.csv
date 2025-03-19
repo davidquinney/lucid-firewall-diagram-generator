@@ -1,0 +1,27 @@
+Software Type,Source,Ports,Transfer Protocol,Destination,Service Flow,Additional Notes,Source AZ (Used for Diagram Generation),Destination AZ (Used for Diagram Generation)
+Web Access,Internet Users,443,TCP,Load Balancer,Internet Users to Load Balancer HTTPS (443 TCP),External web traffic,Internet Services,DMZ
+Web Platform,Load Balancer,443,TCP,Web Server,Load Balancer to Web Server HTTPS (443 TCP),Load balanced web traffic,DMZ,DMZ
+Web Platform,Web Server,8443,TCP,Application Server,Web Server to Application Server API (8443 TCP),Frontend to middle tier communication,DMZ,Application Zone
+Web Platform,Web Server,389,TCP,LDAP Server,Web Server to LDAP Server LDAP (389 TCP),Authentication,DMZ,Authentication Zone
+Database Access,Application Server,1433,TCP,Database Server,Application Server to Database Server SQL (1433 TCP),Application DB access,Application Zone,Database Zone
+Database Access,Application Server,3306,TCP,Database Server,Application Server to Database Server MySQL (3306 TCP),Database read/write,Application Zone,Database Zone
+Database Backup,Database Server,22,TCP,Backup Server,Database Server to Backup Server SSH (22 TCP),Encrypted backup transfer,Database Zone,Management Zone
+Monitoring,Monitoring Server,161,UDP,Web Server,Monitoring Server to Web Server SNMP (161 UDP),Health checks,Management Zone,DMZ
+Monitoring,Monitoring Server,161,UDP,Application Server,Monitoring Server to Application Server SNMP (161 UDP),Health checks,Management Zone,Application Zone
+Monitoring,Monitoring Server,161,UDP,Database Server,Monitoring Server to Database Server SNMP (161 UDP),Health checks,Management Zone,Database Zone
+Management,Admin Workstation,22,TCP,Web Server,Admin Workstation to Web Server SSH (22 TCP),Administration access,Client Network,DMZ
+Management,Admin Workstation,22,TCP,Application Server,Admin Workstation to Application Server SSH (22 TCP),Administration access,Client Network,Application Zone
+Management,Admin Workstation,22,TCP,Database Server,Admin Workstation to Database Server SSH (22 TCP),Administration access,Client Network,Database Zone
+Log Collection,Application Server,514,UDP,Log Server,Application Server to Log Server Syslog (514 UDP),Centralized logging,Application Zone,Management Zone
+Log Collection,Web Server,514,UDP,Log Server,Web Server to Log Server Syslog (514 UDP),Centralized logging,DMZ,Management Zone
+Log Collection,Database Server,514,UDP,Log Server,Database Server to Log Server Syslog (514 UDP),Centralized logging,Database Zone,Management Zone
+DNS Resolution,Web Server,53,UDP,DNS Server,Web Server to DNS Server DNS (53 UDP),Name resolution,DMZ,Management Zone
+DNS Resolution,Application Server,53,UDP,DNS Server,Application Server to DNS Server DNS (53 UDP),Name resolution,Application Zone,Management Zone
+DNS Resolution,Database Server,53,UDP,DNS Server,Database Server to DNS Server DNS (53 UDP),Name resolution,Database Zone,Management Zone
+Time Sync,Web Server,123,UDP,NTP Server,Web Server to NTP Server NTP (123 UDP),Time synchronization,DMZ,Management Zone
+Time Sync,Application Server,123,UDP,NTP Server,Application Server to NTP Server NTP (123 UDP),Time synchronization,Application Zone,Management Zone
+Time Sync,Database Server,123,UDP,NTP Server,Database Server to NTP Server NTP (123 UDP),Time synchronization,Database Zone,Management Zone
+External API,Application Server,443,TCP,Payment Gateway,Application Server to Payment Gateway HTTPS (443 TCP),Payment processing,Application Zone,Internet Services
+Email Notifications,Application Server,587,TCP,SMTP Server,Application Server to SMTP Server SMTP-TLS (587 TCP),Outbound email,Application Zone,Internet Services
+VPN Access,Remote Employees,1194,UDP,VPN Gateway,Remote Employees to VPN Gateway OpenVPN (1194 UDP),Secure remote access,Internet Services,DMZ
+Content Delivery,Web Server,443,TCP,CDN Provider,Web Server to CDN Provider HTTPS (443 TCP),Static content distribution,DMZ,Internet Services

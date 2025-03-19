@@ -35,10 +35,10 @@ class LucidGenerator:
         self.max_y_coordinate = 2300  # Increased from 1800 to accommodate larger containers
         
         # Base container dimensions (will be dynamically adjusted based on content)
-        self.min_container_width = 250  # Minimum width for each AZ container
-        self.min_container_height = 250  # Minimum height for each AZ container
-        self.horizontal_spacing = 150  # Increased spacing between AZs horizontally
-        self.vertical_spacing = 150    # Increased spacing between AZs vertically
+        self.min_container_width = 300  # Minimum width for each AZ container (increased from 250)
+        self.min_container_height = 300  # Minimum height for each AZ container (increased from 250)
+        self.horizontal_spacing = 150  # Spacing between AZs horizontally
+        self.vertical_spacing = 150    # Spacing between AZs vertically
         
         # Entity dimensions
         self.entity_width = 220  # Increased from 180 to better fit text
@@ -50,10 +50,14 @@ class LucidGenerator:
         # Create a grid position map for easy reference
         # This ensures all AZs are properly aligned on a 4x4 grid
         self.grid_positions = {}
+        # Increased horizontal and vertical spacing to avoid container overlaps
+        grid_h_spacing = 450  # Increased from self.horizontal_spacing
+        grid_v_spacing = 350  # Increased from self.vertical_spacing
+        
         for row in range(self.grid_rows):
             for col in range(self.grid_cols):
-                x = self.start_x + col * (self.min_container_width + self.horizontal_spacing)
-                y = self.start_y + row * (self.min_container_height + self.vertical_spacing)
+                x = self.start_x + col * grid_h_spacing
+                y = self.start_y + row * grid_v_spacing
                 self.grid_positions[(row, col)] = {"x": x, "y": y}
         
     def _preprocess_data(self):
@@ -143,24 +147,25 @@ class LucidGenerator:
         containers = []
         
         # Define specific grid positions for key AZs according to requirements
-        # Ensure Client Network is directly above Local AZ (same column)
         az_grid_positions = {
-            # Client Network must always be on the left (top left)
+            # Client Network at top left
             "Client network": (0, 0),  # (row, col) - top left
+            
+            # AZ3 at the top
+            "AZ3": (0, 1),  # top, second column
             
             # Internet Services and External Services must always be on the right
             "Internet Services": (0, 3),  # top right
             "External Services": (1, 3),  # right side, second row
             
-            # AZ1 must always be bottom left
+            # Local AZ in middle left
+            "Local AZ": (2, 0),  # left side, third row
+            
+            # AZ1 must always be at bottom left
             "AZ1": (3, 0),  # bottom left
             
             # AZ2 must always be bottom right
-            "AZ2": (3, 3),  # bottom right
-            
-            # Other specific AZs - Local AZ must be directly below Client Network
-            "Local AZ": (1, 0),  # left side, second row (same column as Client Network)
-            "AZ3": (2, 0)   # left side, third row
+            "AZ2": (3, 3)   # bottom right
         }
         
         # Create a list of available grid positions (excluding reserved positions)
@@ -190,18 +195,34 @@ class LucidGenerator:
                     for source in self.entities_by_az[az]["sources"]:
                         entity_count += 1
                         
-                        # Adjust width based on text length
+                        # Adjust width based on text length and content
                         text_length = len(source)
                         entity_width = self.entity_width
                         entity_height = self.entity_height
                         
-                        if text_length > 30:
-                            entity_width = max(entity_width, 280)  # Wider for very long text
+                        # More aggressive scaling for longer text
+                        if text_length > 40:
+                            entity_width = max(entity_width, 350)  # Much wider for very long text
+                        elif text_length > 30:
+                            entity_width = max(entity_width, 300)  # Wider for very long text
                         elif text_length > 20:
-                            entity_width = max(entity_width, 240)  # Wide for long text
+                            entity_width = max(entity_width, 250)  # Wide for long text
+                        
+                        # Special handling for text with parentheses
+                        has_parentheses = "(" in source and ")" in source
+                        if has_parentheses:
+                            # Add 10% additional width for text with parentheses
+                            entity_width = int(entity_width * 1.1)
                             
-                        if text_length > 25:
-                            entity_height = max(entity_height, 60)  # Taller for long text
+                        # Adjust height based on text length
+                        if text_length > 35:
+                            entity_height = max(entity_height, 80)  # Much taller for very long text
+                        elif text_length > 25:
+                            entity_height = max(entity_height, 70)  # Taller for long text
+                        
+                        # Add additional height for text with parentheses
+                        if has_parentheses:
+                            entity_height = max(entity_height, entity_height + 10)
                             
                         max_entity_width = max(max_entity_width, entity_width)
                         total_entity_height += entity_height
@@ -212,18 +233,34 @@ class LucidGenerator:
                         if "sources" not in self.entities_by_az[az] or dest not in self.entities_by_az[az]["sources"]:
                             entity_count += 1
                             
-                            # Adjust width based on text length
+                            # Adjust width based on text length and content
                             text_length = len(dest)
                             entity_width = self.entity_width
                             entity_height = self.entity_height
                             
-                            if text_length > 30:
-                                entity_width = max(entity_width, 280)  # Wider for very long text
+                            # More aggressive scaling for longer text
+                            if text_length > 40:
+                                entity_width = max(entity_width, 350)  # Much wider for very long text
+                            elif text_length > 30:
+                                entity_width = max(entity_width, 300)  # Wider for very long text
                             elif text_length > 20:
-                                entity_width = max(entity_width, 240)  # Wide for long text
+                                entity_width = max(entity_width, 250)  # Wide for long text
+                            
+                            # Special handling for text with parentheses
+                            has_parentheses = "(" in dest and ")" in dest
+                            if has_parentheses:
+                                # Add 10% additional width for text with parentheses
+                                entity_width = int(entity_width * 1.1)
                                 
-                            if text_length > 25:
-                                entity_height = max(entity_height, 60)  # Taller for long text
+                            # Adjust height based on text length
+                            if text_length > 35:
+                                entity_height = max(entity_height, 80)  # Much taller for very long text
+                            elif text_length > 25:
+                                entity_height = max(entity_height, 70)  # Taller for long text
+                            
+                            # Add additional height for text with parentheses
+                            if has_parentheses:
+                                entity_height = max(entity_height, entity_height + 10)
                                 
                             max_entity_width = max(max_entity_width, entity_width)
                             total_entity_height += entity_height
@@ -233,8 +270,27 @@ class LucidGenerator:
                 
                 # Calculate container dimensions with padding
                 if entity_count > 0:
-                    container_width = max(self.min_container_width, max_entity_width + 60)  # 30px padding on each side
-                    container_height = max(self.min_container_height, total_entity_height + spacing + 80)  # 40px padding top and bottom
+                    # More padding for containers with many entities
+                    horizontal_padding = 60  # 30px padding on each side
+                    vertical_padding = 80    # 40px padding top and bottom
+                    
+                    # Add additional padding for containers with many entities
+                    if entity_count > 5:
+                        horizontal_padding += 20  # Extra padding for many entities
+                        vertical_padding += entity_count * 5  # Scale padding with entity count
+                    
+                    # Calculate container dimensions with padding
+                    container_width = max(self.min_container_width, max_entity_width + horizontal_padding)
+                    container_height = max(self.min_container_height, total_entity_height + spacing + vertical_padding)
+                    
+                    # Apply more aggressive height calculation for containers with many entities
+                    if entity_count > 5:
+                        # Add additional height based on entity count - significantly increased multiplier
+                        additional_height = (entity_count - 5) * 60  # Increased from 20 to 60
+                        container_height = container_height + additional_height  # Always add the additional height
+                    
+                    # Add extra padding for safety
+                    container_height += 50  # Add extra padding to ensure all entities fit
             
             az_dimensions[az] = {
                 "width": container_width,
@@ -292,6 +348,9 @@ class LucidGenerator:
                 },
                 "text": f"<p style=\"font-family: Liberation Sans;font-size: 9pt;text-align: center;margin-top: 10px;\">{az}</p><p style=\"font-family: Liberation Sans;font-size: 9pt;text-align: center;\"><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br></p>"
             }
+            
+            # Store the container dimensions for validation later
+            az_dimensions[az]["container"] = container
             
             containers.append(container)
         
@@ -419,6 +478,78 @@ class LucidGenerator:
         
         return connection_counts
     
+    def _validate_container_bounds(self, az, entity_shapes):
+        """
+        Validate and adjust container bounds if entities exceed them
+        
+        Args:
+            az (str): The AZ name
+            entity_shapes (list): List of entity shapes in this AZ
+            
+        Returns:
+            bool: True if container was adjusted, False otherwise
+        """
+        if az not in self.az_list or not entity_shapes:
+            return False
+            
+        # Get the container for this AZ
+        container = None
+        for az_info in self.az_dimensions.values():
+            if "container" in az_info and az_info["container"]["text"].startswith(f"<p style=\"font-family: Liberation Sans;font-size: 9pt;text-align: center;margin-top: 10px;\">{az}</p>"):
+                container = az_info["container"]
+                break
+                
+        if not container:
+            return False
+            
+        # Get container bounds
+        container_x = container["boundingBox"]["x"]
+        container_y = container["boundingBox"]["y"]
+        container_width = container["boundingBox"]["w"]
+        container_height = container["boundingBox"]["h"]
+        
+        # Find the extents of all entities
+        min_x = float('inf')
+        max_x = float('-inf')
+        min_y = float('inf')
+        max_y = float('-inf')
+        
+        for shape in entity_shapes:
+            entity_x = shape["boundingBox"]["x"]
+            entity_y = shape["boundingBox"]["y"]
+            entity_width = shape["boundingBox"]["w"]
+            entity_height = shape["boundingBox"]["h"]
+            
+            # Update min/max coordinates
+            min_x = min(min_x, entity_x)
+            max_x = max(max_x, entity_x + entity_width)
+            min_y = min(min_y, entity_y)
+            max_y = max(max_y, entity_y + entity_height)
+        
+        # Always adjust the container to ensure all entities fit with padding
+        # This is more aggressive than the previous approach which only adjusted if entities exceeded bounds
+        
+        # Calculate required container size with generous padding
+        required_width = max_x - min_x + 80  # 40px padding on each side
+        required_height = max_y - min_y + 100  # 50px padding on top and bottom
+        
+        # Calculate the new container dimensions
+        new_width = max(container_width, required_width)
+        new_height = max(container_height, required_height)
+        
+        # Ensure the container extends below the last entity with extra padding
+        bottom_padding = 50  # Extra padding at the bottom
+        if max_y + bottom_padding > container_y + new_height:
+            new_height = max_y - container_y + bottom_padding
+        
+        # Apply the new dimensions if they're different from the current ones
+        if new_width != container_width or new_height != container_height:
+            container["boundingBox"]["w"] = new_width
+            container["boundingBox"]["h"] = new_height
+            return True
+            
+        return False
+    
     def _create_entity_shapes(self):
         """
         Create shapes for each entity (source and destination) ensuring they fit within their AZ
@@ -426,6 +557,8 @@ class LucidGenerator:
         Returns:
             list: List of entity shapes
         """
+        # Store AZ dimensions for container validation
+        self.az_dimensions = {}
         shapes = []
         
         # Pre-analyze connections to get connection counts
@@ -433,22 +566,24 @@ class LucidGenerator:
         
         # Define specific grid positions for key AZs (same as in _create_az_containers)
         az_grid_positions = {
-            # Client Network must always be on the left (top left)
-            "Client network": (0, 0),  # (row, col) - top left
+            # Client Network at top left
+            "Client network": (0, 0),  # top left
+            
+            # AZ3 at the top
+            "AZ3": (0, 1),  # top, second column
             
             # Internet Services and External Services must always be on the right
             "Internet Services": (0, 3),  # top right
             "External Services": (1, 3),  # right side, second row
             
-            # AZ1 must always be bottom left
+            # Local AZ in middle left
+            "Local AZ": (2, 0),  # left side, third row
+            
+            # AZ1 must always be at bottom left
             "AZ1": (3, 0),  # bottom left
             
             # AZ2 must always be bottom right
-            "AZ2": (3, 3),  # bottom right
-            
-            # Other specific AZs
-            "Local AZ": (1, 0),  # left side, second row
-            "AZ3": (2, 0)   # left side, third row
+            "AZ2": (3, 3)   # bottom right
         }
         
         # Create a mapping of AZ to grid position
@@ -566,6 +701,9 @@ class LucidGenerator:
             else:
                 max_entity_height = self.entity_height
             
+            # Keep track of shapes for this AZ for container validation
+            az_shapes = []
+            
             # Process entities in this AZ
             for entity in entities_by_az_ordered[az]:
                 entity_id = self.entity_id_map[entity]
@@ -664,7 +802,11 @@ class LucidGenerator:
                 }
                 
                 shapes.append(shape)
+                az_shapes.append(shape)
                 az_y_positions[az] += entity_height + self.entity_vertical_spacing
+            
+            # Validate and adjust container bounds if needed
+            self._validate_container_bounds(az, az_shapes)
         
         return shapes
     
@@ -1026,13 +1168,24 @@ class LucidGenerator:
             
             # Define specific grid positions for key AZs (same as in _create_az_containers)
             az_grid_positions = {
+                # Client Network at top left
                 "Client network": (0, 0),  # top left
+                
+                # AZ3 at the top
+                "AZ3": (0, 1),  # top, second column
+                
+                # Internet Services and External Services must always be on the right
                 "Internet Services": (0, 3),  # top right
                 "External Services": (1, 3),  # right side, second row
+                
+                # Local AZ in middle left
+                "Local AZ": (2, 0),  # left side, third row
+                
+                # AZ1 must always be at bottom left
                 "AZ1": (3, 0),  # bottom left
-                "AZ2": (3, 3),  # bottom right
-                "Local AZ": (1, 0),  # left side, second row
-                "AZ3": (2, 0)   # left side, third row
+                
+                # AZ2 must always be bottom right
+                "AZ2": (3, 3)   # bottom right
             }
             
             # Get grid positions for source and destination AZs
@@ -1081,29 +1234,55 @@ class LucidGenerator:
                 source_row, source_col = source_grid_pos
                 dest_row, dest_col = dest_grid_pos
                 
+                # Special handling for Client Network connections - always use right side
+                if source_az == "Client network":
+                    source_pos = {"x": 1, "y": source_y}  # Always use right side of Client Network
+                    # Destination should use left side when possible
+                    dest_pos = {"x": 0, "y": dest_y}      # Left side of destination
+                    
                 # Get the connection index for this entity pair
                 connection_index = grouped_connections[direction_key]["connection_index"]
                 
                 if is_cross_az:
-                    # Cross-AZ connection: use right-to-left positioning
-                    if source_col < dest_col:
-                        # Source is to the left of destination
-                        source_pos = {"x": 1, "y": source_y}  # Right side of source
-                        dest_pos = {"x": 0, "y": dest_y}      # Left side of destination
-                    elif source_col > dest_col:
-                        # Source is to the right of destination
-                        source_pos = {"x": 0, "y": source_y}  # Left side of source
-                        dest_pos = {"x": 1, "y": dest_y}      # Right side of destination
-                    else:
-                        # Same column but different rows - use right-to-left
-                        if source_row < dest_row:
-                            # Source is above destination
+                    # Cross-AZ connection with improved diagonal handling
+                    if source_col != dest_col and source_row != dest_row:
+                        # Diagonal connection - special handling based on diagonal type
+                        if source_row > dest_row and source_col < dest_col:
+                            # Bottom-left to top-right: both use right sides
+                            source_pos = {"x": 1, "y": source_y}  # Right side of source
+                            dest_pos = {"x": 1, "y": dest_y}      # Right side of destination
+                        elif source_row < dest_row and source_col > dest_col:
+                            # Top-right to bottom-left: both use left sides
+                            source_pos = {"x": 0, "y": source_y}  # Left side of source
+                            dest_pos = {"x": 0, "y": dest_y}      # Left side of destination
+                        elif source_row < dest_row and source_col < dest_col:
+                            # Top-left to bottom-right: right-to-left standard
                             source_pos = {"x": 1, "y": source_y}  # Right side of source
                             dest_pos = {"x": 0, "y": dest_y}      # Left side of destination
                         else:
-                            # Source is below destination
+                            # Bottom-right to top-left: left-to-right standard
                             source_pos = {"x": 0, "y": source_y}  # Left side of source
                             dest_pos = {"x": 1, "y": dest_y}      # Right side of destination
+                    else:
+                        # Non-diagonal cross-AZ connection: use standard right-to-left positioning
+                        if source_col < dest_col:
+                            # Source is to the left of destination
+                            source_pos = {"x": 1, "y": source_y}  # Right side of source
+                            dest_pos = {"x": 0, "y": dest_y}      # Left side of destination
+                        elif source_col > dest_col:
+                            # Source is to the right of destination
+                            source_pos = {"x": 0, "y": source_y}  # Left side of source
+                            dest_pos = {"x": 1, "y": dest_y}      # Right side of destination
+                        else:
+                            # Same column but different rows - use right-to-left
+                            if source_row < dest_row:
+                                # Source is above destination
+                                source_pos = {"x": 1, "y": source_y}  # Right side of source
+                                dest_pos = {"x": 0, "y": dest_y}      # Left side of destination
+                            else:
+                                # Source is below destination
+                                source_pos = {"x": 0, "y": source_y}  # Left side of source
+                                dest_pos = {"x": 1, "y": dest_y}      # Right side of destination
                 else:
                     # Same-AZ connection: use consistent sides based on AZ position
                     # Left-side AZs use left side, Right-side AZs use right side
@@ -1126,20 +1305,53 @@ class LucidGenerator:
                     # Count total connections for this entity pair to distribute evenly
                     total_connections = len(grouped_connections.keys())
                     
-                    # Base y-positions - we'll distribute these across the entity's side
-                    # Use a wider range (0.15 to 0.85) to spread connection points further apart
-                    base_positions = [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85]
+                    # Improved arrow distribution algorithm
+                    # Use a progressive distribution based on connection count and index
                     
-                    # Calculate position index based on connection index
-                    position_index = connection_index % len(base_positions)
+                    # Get the total number of connections for this entity
+                    source_total_connections = len([k for k, c in grouped_connections.items() if c["source_id"] == source_id])
+                    dest_total_connections = len([k for k, c in grouped_connections.items() if c["dest_id"] == dest_id])
+                    
+                    # Calculate the source and destination indices among all connections for these entities
+                    source_connection_index = len([k for k, c in grouped_connections.items() 
+                                                if c["source_id"] == source_id and 
+                                                list(grouped_connections.keys()).index(k) < list(grouped_connections.keys()).index(direction_key)])
+                    
+                    dest_connection_index = len([k for k, c in grouped_connections.items() 
+                                              if c["dest_id"] == dest_id and 
+                                              list(grouped_connections.keys()).index(k) < list(grouped_connections.keys()).index(direction_key)])
+                    
+                    # Create a wider range of base positions for better distribution
+                    # More connections = more spread out distribution
+                    base_positions = []
+                    
+                    # Dynamically create positions based on connection count
+                    if source_total_connections <= 3:
+                        # For few connections, use fixed positions
+                        base_positions = [0.2, 0.5, 0.8]
+                    elif source_total_connections <= 5:
+                        # For medium number of connections, use more positions
+                        base_positions = [0.15, 0.3, 0.5, 0.7, 0.85]
+                    else:
+                        # For many connections, create evenly distributed positions
+                        step = 0.7 / (source_total_connections - 1)
+                        base_positions = [0.15 + i * step for i in range(source_total_connections)]
                     
                     # Get base positions for source and destination
-                    # Use different positions for source and destination to avoid straight lines
-                    source_base_y = base_positions[position_index]
-                    dest_base_y = base_positions[(position_index + 4) % len(base_positions)]
+                    source_base_y = base_positions[min(source_connection_index, len(base_positions) - 1)]
                     
-                    # Add small variation based on protocol to ensure uniqueness
-                    # Use the hash of the protocol name to add a small offset
+                    # For destination, use a different distribution to avoid straight lines
+                    if dest_total_connections <= 3:
+                        dest_base_positions = [0.2, 0.5, 0.8]
+                    elif dest_total_connections <= 5:
+                        dest_base_positions = [0.15, 0.3, 0.5, 0.7, 0.85]
+                    else:
+                        step = 0.7 / (dest_total_connections - 1)
+                        dest_base_positions = [0.15 + i * step for i in range(dest_total_connections)]
+                    
+                    dest_base_y = dest_base_positions[min(dest_connection_index, len(dest_base_positions) - 1)]
+                    
+                    # Add protocol-based variation for uniqueness
                     protocol_key = list(conn_data["protocols"].keys())[0]
                     protocol_hash = sum(ord(c) for c in protocol_key) % 10
                     protocol_variation = protocol_hash * 0.01  # Small variation (0.00 to 0.09)
@@ -1147,6 +1359,11 @@ class LucidGenerator:
                     # Apply the positions with variations
                     source_y = source_base_y + protocol_variation
                     dest_y = dest_base_y - protocol_variation
+                    
+                    # Add additional variation based on connection index to ensure uniqueness
+                    connection_variation = (connection_index % 3) * 0.02
+                    source_y += connection_variation
+                    dest_y -= connection_variation
                     
                     # Ensure y-coordinates are within bounds
                     source_y = max(0.1, min(0.9, source_y))

@@ -1,5 +1,11 @@
 import pandas as pd
 import os
+import warnings
+
+# Suppress specific openpyxl warnings about data validation
+warnings.filterwarnings("ignore", 
+                       message="Data Validation extension is not supported and will be removed",
+                       module="openpyxl")
 
 def read_excel_data(file_path):
     """
@@ -15,8 +21,41 @@ def read_excel_data(file_path):
         raise FileNotFoundError(f"Excel file not found: {file_path}")
     
     try:
-        # Skip the first few rows which contain instructions
-        df = pd.read_excel(file_path, sheet_name="External Ports", skiprows=3)
+        # First try to read the sheet with default settings
+        try:
+            df = pd.read_excel(file_path, sheet_name="External Ports")
+            
+            # Check if we have the required columns
+            required_columns = ["Software Type", "Source", "Destination", 
+                               "Source AZ (Used for Diagram Generation)", 
+                               "Destination AZ (Used for Diagram Generation)"]
+            
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                print(f"Warning: Missing required columns: {', '.join(missing_columns)}")
+                print("Trying to read the file with different settings...")
+                raise ValueError("Missing required columns")
+                
+        except (ValueError, KeyError):
+            # If that fails, try skipping the first few rows which might contain instructions
+            print("Attempting to skip header rows...")
+            for skip_rows in range(1, 6):  # Try skipping 1-5 rows
+                try:
+                    df = pd.read_excel(file_path, sheet_name="External Ports", skiprows=skip_rows)
+                    
+                    # Check if we have the required columns now
+                    required_columns = ["Software Type", "Source", "Destination", 
+                                       "Source AZ (Used for Diagram Generation)", 
+                                       "Destination AZ (Used for Diagram Generation)"]
+                    
+                    missing_columns = [col for col in required_columns if col not in df.columns]
+                    if not missing_columns:
+                        print(f"Successfully read Excel file by skipping {skip_rows} rows")
+                        break
+                except:
+                    continue
+            else:
+                raise Exception("Could not find required columns in the Excel file")
         
         # Clean up any potential NaN values in key columns
         df = df.dropna(subset=["Software Type", "Source", "Destination"])

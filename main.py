@@ -2,7 +2,13 @@
 
 import os
 import sys
+import warnings
 import pandas as pd
+
+# Suppress specific openpyxl warnings about data validation
+warnings.filterwarnings("ignore", 
+                       message="Data Validation extension is not supported and will be removed",
+                       module="openpyxl")
 from excel_reader import read_excel_data, get_software_types, filter_by_software_type
 from lucid_generator import create_lucid_file
 from api_client import LucidApiClient
@@ -33,15 +39,57 @@ def display_menu(software_types):
         except ValueError:
             print("Please enter a valid number")
 
+def display_excel_files():
+    """
+    Display a menu of available Excel files in the source data directory
+    
+    Returns:
+        str: The path to the selected Excel file
+    """
+    source_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source data")
+    
+    # Check if the source data directory exists
+    if not os.path.exists(source_data_dir):
+        print(f"Error: Source data directory not found at {source_data_dir}")
+        print("Creating directory...")
+        os.makedirs(source_data_dir, exist_ok=True)
+        print(f"Please place your Excel files in {source_data_dir} and run the tool again.")
+        sys.exit(1)
+    
+    # Get all Excel files in the directory
+    excel_files = [f for f in os.listdir(source_data_dir) 
+                  if f.endswith('.xlsx') or f.endswith('.xls')]
+    
+    if not excel_files:
+        print(f"Error: No Excel files found in {source_data_dir}")
+        print("Please place your Excel files in this directory and run the tool again.")
+        sys.exit(1)
+    
+    print("\nAvailable Excel Files:")
+    for i, file in enumerate(excel_files, 1):
+        print(f"{i}. {file}")
+    
+    while True:
+        try:
+            choice = input("\nEnter the number of the Excel file to use: ")
+            selection = int(choice) - 1
+            
+            if 0 <= selection < len(excel_files):
+                return os.path.join(source_data_dir, excel_files[selection])
+            else:
+                print(f"Please enter a number between 1 and {len(excel_files)}")
+        except ValueError:
+            print("Please enter a valid number")
+
 def main():
     """
     Main function to run the Lucid Firewall Diagram Generator
     """
-    # Define the path to the Excel file
-    excel_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                 "source data", "Firewall Template.xlsx")
+    # Let the user select an Excel file
+    print("Select an Excel file to use:")
+    excel_file_path = display_excel_files()
     
-    # Check if the Excel file exists
+    # Check if the Excel file exists (should always be true at this point)
     if not os.path.exists(excel_file_path):
         print(f"Error: Excel file not found at {excel_file_path}")
         sys.exit(1)
